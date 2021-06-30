@@ -7,13 +7,16 @@ import java.util.Map;
 import java.util.Scanner;
 
 public class JABEServer {
+	
     public static void main(String[] args) {
+		
         Scanner scanner = new Scanner(System.in);
         Map<String,String> credentials = new HashMap<>();
         System.out.println("Enter new client credentials please: (<username> <password>) confirm each key value pair with enter..");
         System.out.println("If you finished your Input, please type 'DONE'");
         boolean read = true;
-        while(read){
+		
+        while(read){	//Enter a new user with password
             try {
                 String input = scanner.nextLine();
                 if(input.equals("DONE")){
@@ -34,13 +37,17 @@ public class JABEServer {
             }catch (Exception e) {
                 //TODO: handle exception
             }
-        }
+        }	//end of while
+		
+		//Print out all added users with their passwords
         System.out.println("Entered credentials: ");
         for(Map.Entry<String,String> entry: credentials.entrySet()){
             System.out.println("Username: "+entry.getKey() +" Password: "+  entry.getValue());
-        }
+        }	//end of for
+		
         System.out.println("JABE is starting....");
         //starting the Naming service
+		//JABEImpl runs on this main-Thread, is started from here
         try {
             Registry reg = LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
             JABEImpl jabeImpl = new JABEImpl(credentials);

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Scanner;
 
 public class JABEClient {
+	
     private String username;
 
     public String getUsername() {
@@ -18,7 +19,9 @@ public class JABEClient {
         this.username = username;
     }
 
+	//Called within main, startup proecedure
     private void login(JABEInterface jabeInterface, Scanner scanner) throws RemoteException {
+		
         System.out.println("Enter password:");
         String password = scanner.nextLine();
         if (jabeInterface.login(getUsername(), password)) {
@@ -28,7 +31,9 @@ public class JABEClient {
         }
     }
 
+	//print list of possible actions
     private void printActions() {
+		
         System.out.println("Available Actions: (Enter the appropriate number)");
         System.out.println("1: Offer (offer an item and determine the min price and max duration (seconds)");
         System.out.println("2: List (all items of a certain user can be listed)");
@@ -39,10 +44,12 @@ public class JABEClient {
         
     }
 
+	//gets list from Server (JABEImpl) and prints it out
     private void listItems(JABEInterface jabeInterface, Scanner scanner) throws RemoteException {
+		
         System.out.println("Enter username:");
         String username = scanner.nextLine();
-        List<JABEItem> items = jabeInterface.listAuctinsOfUser(username);
+        List<JABEItem> items = jabeInterface.listAuctionsOfUser(username);
         if (items != null) {
             if (!items.isEmpty()) {
                 for (JABEItem item : items) {
@@ -56,7 +63,9 @@ public class JABEClient {
         }
     }
 
+	//locally receives item information and passes it on to JABEImpl; Item-Object is created there
     private void offerItem(JABEInterface jabeInterface, Scanner scanner) throws RemoteException {
+		
         System.out.println("Enter Item : <name> <minPrice> <maxDuration>");
         String itemInput = scanner.nextLine();
         String[] input = itemInput.split("\\s+");
@@ -76,8 +85,10 @@ public class JABEClient {
             System.out.println("Wrong Input..");
         }
     }
-
+	
+	//receives bid-value for item (ID) and passes it to JABEImpl.bid(), which returns false if bid is incorrect
     private void bidOnItem(JABEInterface jabeInterface, Scanner scanner) throws RemoteException {
+		
         System.out.println("Enter bid: <ItemID> <bid(int)>");
         String bidInput = scanner.nextLine();
         String[] input = bidInput.split("\\s+");
@@ -97,31 +108,33 @@ public class JABEClient {
         }
     }
 
+	//Loops over the various choices the user has
     private void actionLoop(JABEInterface jabeInterface, Scanner scanner) throws RemoteException {
+		
         boolean action = true;
         printActions();
         while (action) {
             try {
                 int input = Integer.parseInt(scanner.nextLine());
                 switch (input) {
-                    case 1:
+                    case 1:		//offer an item
                         offerItem(jabeInterface, scanner);
                         printActions();
                         break;
-                    case 2:
-                        listItems(jabeInterface, scanner);
+                    case 2:		//list items of one user
+                        listItems(jabeInterface, scanner);	
                         printActions();
                         break;
-                    case 3:
+                    case 3:		//bid on an item
                         bidOnItem(jabeInterface, scanner);
                         printActions();
                         break;
-                    case 4:
+                    case 4:		//put this user in observer mode
                         break;
-                    case 5:
+                    case 5:		//print available actions
                         printActions();
                         break;
-                    case 0:
+                    case 0:		//Quit; user will be logged out
                         System.out.println("Quitting...");
                         action = false;
                         jabeInterface.logout(getUsername());
@@ -136,7 +149,9 @@ public class JABEClient {
         }
     }
 
+	//User chooses user name and is connected to the Server (JABEImpl)
     public static void main(String[] args) {
+		
         try {
             Scanner scanner = new Scanner(System.in);
             System.out.println("Enter Username:");

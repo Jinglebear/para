@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Timer;
 
 public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
+	
     List<String> loggedInUsers; // list of logged in clients
     Map<String, String> loginCredentials; // map of (username,password) login credentials
     Map<String, ArrayList<JABEItem>> offers; // map of clients and their offers
@@ -40,6 +41,7 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
         return success;
     }
 
+	//user is logged out if he quit the Application (JABEClient); removes user from list of logged in users
     public boolean logout(String username) throws RemoteException {
         boolean success = false;
         if (this.loggedInUsers.contains(username)) {
@@ -55,13 +57,14 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
      * timeList map
      */
     public boolean offer(String username, String itemName, int minPrice, int maxDuration) throws RemoteException {
+		//sets the offer for an item, starts the timer; auction automatically ends after time expires
         boolean success = false;
         if (loggedInUsers.contains(username)) {
             JABEItem item = new JABEItem(itemName);
             item.setPrice(minPrice);
             this.offers.get(username).add(item);
             success = true;
-            MyTask myTask = new MyTask(maxDuration, this, item.getID(), username);
+            MyTask myTask = new MyTask(maxDuration, this, item.getID(), username);		//uses class MyTask
             Timer timer = new Timer("MyTimer");
             timer.schedule(myTask, 0);
         } else {
@@ -70,12 +73,16 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
         return success;
     }
 
+	//Updates item list when the Item with ID itemID from Seller seller has expired
     public synchronized void updateItemList(String itemID, String seller) {
+		
         boolean search = true;
         for (int i = 0; i < this.offers.get(seller).size() && search; ++i) {
             if (this.offers.get(seller).get(i).getID().equals(itemID)) {
                 String highestBidder = this.currentHighestBidder.get(itemID);
                 this.currentHighestBidder.remove(itemID);
+				
+				//prints out message on the Server:
                 System.out.println("Item offer " + this.offers.get(seller).get(i).getName() + " expired and "
                         + highestBidder + " was the highest Bidder!");
                 this.offers.get(seller).remove(i);
@@ -88,7 +95,8 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
      * list method if username fits to one client in offers map the belonging offer
      * list is returned
      */
-    public synchronized List<JABEItem> listAuctinsOfUser(String username) throws RemoteException {
+    public synchronized List<JABEItem> listAuctionsOfUser(String username) throws RemoteException {
+		
         for (Map.Entry<String, ArrayList<JABEItem>> entry : this.offers.entrySet()) {
             if (entry.getKey().equals(username)) {
                 return entry.getValue();
@@ -105,12 +113,14 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
      */
     @Override
     public synchronized boolean bid(String username, String itemID, int bid) throws RemoteException {
+		
+		
         boolean success = false;
         if (this.loggedInUsers.contains(username)) {
             for (ArrayList<JABEItem> list : this.offers.values()) {
                 for (JABEItem itemInList : list) {
                     if (itemInList.getID().equals(itemID)) {
-                        if (bid > itemInList.getPrice()) {
+                        if (bid > itemInList.getPrice()) {	//If item was found and new bid is higher, set new highest bidder (and return true)
                             itemInList.setPrice(bid);
                             this.currentHighestBidder.put(itemInList.getID(), username);
                             success = true;

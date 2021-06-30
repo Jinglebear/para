@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class JABEItem implements Serializable{
+	
     private static int idCounter = 0; // static counter
     private String name; // name of the item
     private final String ID; // unique ID
