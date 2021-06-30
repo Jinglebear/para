@@ -116,7 +116,7 @@ public class JABEClient {
     private void observe(JABEInterface jabeInterface, Scanner scanner) throws RemoteException {
         System.out.println("Entering observer mode");
 
-        monitor = new JABEMonitorImpl();
+        monitor = new JABEMonitorImpl(username);
         jabeInterface.observe(monitor);
 
     }

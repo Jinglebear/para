@@ -3,8 +3,11 @@ import java.rmi.server.UnicastRemoteObject;
 
 public class JABEMonitorImpl extends UnicastRemoteObject implements JABEMonitorInterface{
 
-    protected JABEMonitorImpl() throws RemoteException {
+	private String name;
+
+    protected JABEMonitorImpl(String name) throws RemoteException {
         super();
+		this.name = name;
     }
 
     @Override
@@ -18,6 +21,10 @@ public class JABEMonitorImpl extends UnicastRemoteObject implements JABEMonitorI
         System.out.println("Auction for item: "+itemID+" ended");
         
     }
+	
+	public String getName() throws RemoteException {
+		return name;
+	}
 
     
     
