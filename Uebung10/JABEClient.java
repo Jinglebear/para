@@ -19,9 +19,10 @@ public class JABEClient {
     private void login(JABEInterface jabeInterface, Scanner scanner) throws RemoteException {
         System.out.println("Enter password:");
         String password = scanner.nextLine();
-        if (jabeInterface.login(getUsername(), password)) {
+        try { 
+			jabeInterface.login(getUsername(), password);
             System.out.println("Logged in successfully");
-        } else {
+        } catch(JABEException e) {
             System.out.println("Login failed!");
         }
     }
@@ -44,8 +45,8 @@ public class JABEClient {
         if (choice == 1) {
             System.out.println("Enter username:");
             String username = scanner.nextLine();
-            List<JABEItem> items = jabeInterface.listAuctinsOfUser(username, false);
-            if (items != null) {
+			try {
+				List<JABEItem> items = jabeInterface.listAuctinsOfUser(username, false);
                 if (!items.isEmpty()) {
                     for (JABEItem item : items) {
                         System.out.println(item.toString());
@@ -53,14 +54,19 @@ public class JABEClient {
                 } else {
                     System.out.println("This user does not have Items listed yet");
                 }
-            } else {
-                System.out.println("No items could be found");
-            }
+			}
+			catch(JABEException e) 
+			{
+				System.out.println("No items could be found");
+			}
         } else if (choice == 0) {
-            List<JABEItem> items = jabeInterface.listAuctinsOfUser(null, true);
-            for (JABEItem item : items) {
-                System.out.println(item.toString());
-            }
+			try {
+				List<JABEItem> items = jabeInterface.listAuctinsOfUser(null, true);
+				for (JABEItem item : items) {
+					System.out.println(item.toString());
+				}
+			}
+			catch(JABEException e) {}
         }
     }
 
@@ -75,9 +81,10 @@ public class JABEClient {
             String itemName = input[0];
             int minPrice = Integer.parseInt(input[1]);
             int maxDuration = Integer.parseInt(input[2]);
-            if (jabeInterface.offer(getUsername(), itemName, minPrice, maxDuration)) {
+            try {
+				jabeInterface.offer(getUsername(), itemName, minPrice, maxDuration);
                 System.out.println("Successfully placed Item: " + itemName + " " + minPrice + " " + maxDuration);
-            } else {
+            } catch(JABEException je) {
                 System.out.println("Could not place the item successfully");
             }
         } catch (IllegalArgumentException e) {
@@ -95,9 +102,10 @@ public class JABEClient {
             }
             String id = input[0];
             int bid = Integer.parseInt(input[1]);
-            if (jabeInterface.bid(getUsername(), id, bid)) {
+            try {
+				jabeInterface.bid(getUsername(), id, bid);
                 System.out.println("Successfully placed a bid on the item");
-            } else {
+            } catch(JABEException je) {
                 System.out.println("Could not place a bid on the item");
             }
         } catch (IllegalArgumentException e) {
@@ -146,14 +154,18 @@ public class JABEClient {
                     case 0:
                         System.out.println("Quitting...");
                         action = false;
-                        jabeInterface.logout(getUsername());
+						try {
+							jabeInterface.logout(getUsername());
+						} catch(JABEException je) {}
                         break;
                     default:
                         throw new NumberFormatException();
                 }
             } catch (NumberFormatException e) {
                 System.out.println("Wrong Input..");
-                jabeInterface.logout(getUsername());
+				try {
+					jabeInterface.logout(getUsername());
+				} catch(JABEException je) {}
             }
         }
     }

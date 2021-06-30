@@ -27,7 +27,7 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
      * 
      * @return true (if login was successfull), false (if login was not successfull)
      */
-    public boolean login(String username, String password) throws RemoteException {
+    public void login(String username, String password) throws RemoteException, JABEException {
         boolean success = false;
         for (Map.Entry<String, String> entry : this.loginCredentials.entrySet()) {
             if (entry.getKey().equals(username) && entry.getValue().equals(password)) {
@@ -39,24 +39,28 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
             ArrayList<JABEItem> itemArr = new ArrayList<>();
             offers.put(username, itemArr);
         }
-        return success;
+		else
+			throw new JABEException();
+        //return success;
     }
 
-    public boolean logout(String username) throws RemoteException {
-        boolean success = false;
+    public void logout(String username) throws RemoteException, JABEException {
+        //boolean success = false;
         if (this.loggedInUsers.contains(username)) {
             this.loggedInUsers.remove(username);
-            success = true;
+            //success = true;
         }
+		else
+			throw new JABEException();
 
-        return success;
+        //return success;
     }
 
     /**
      * offer Method make a new Item offer list item in offers map list item in
      * timeList map
      */
-    public boolean offer(String username, String itemName, int minPrice, int maxDuration) throws RemoteException {
+    public void offer(String username, String itemName, int minPrice, int maxDuration) throws RemoteException, JABEException {
         boolean success = false;
         if (loggedInUsers.contains(username)) {
             JABEItem item = new JABEItem(itemName);
@@ -76,8 +80,9 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
             }
         } else {
             System.out.println(username + "tried to offer an item (but was not logged in)");
+			throw new JABEException();
         }
-        return success;
+        //return success;
     }
 
     public synchronized void updateItemList(String itemID, String seller)throws RemoteException {
@@ -106,7 +111,7 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
      * list method if username fits to one client in offers map the belonging offer
      * list is returned
      */
-    public synchronized List<JABEItem> listAuctinsOfUser(String username,boolean all) throws RemoteException {
+    public synchronized List<JABEItem> listAuctinsOfUser(String username,boolean all) throws RemoteException, JABEException {
         if(all){
             ArrayList<JABEItem> result = new ArrayList<>();
             for(Map.Entry<String,ArrayList<JABEItem>> entry: this.offers.entrySet()){
@@ -123,7 +128,8 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
                 }
             }
         }
-        return null;
+		throw new JABEException();
+        //return null;
     }
 
     /**
@@ -133,7 +139,7 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
      * 
      */
     @Override
-    public synchronized boolean bid(String username, String itemID, int bid) throws RemoteException {
+    public synchronized void bid(String username, String itemID, int bid) throws RemoteException, JABEException {
         boolean success = false;
         if (this.loggedInUsers.contains(username)) {
             for (ArrayList<JABEItem> list : this.offers.values()) {
@@ -163,7 +169,8 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
                 }
             }
         }
-        return success;
+        if(!success)
+			throw new JABEException();
     }
     Map<String,ArrayList<String>> listOfConcern;
     @Override
