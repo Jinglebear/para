@@ -1,3 +1,4 @@
+import java.rmi.RemoteException;
 import java.util.TimerTask;
 
 public class MyTask extends TimerTask {
@@ -17,7 +18,12 @@ public class MyTask extends TimerTask {
     public void run() {
         try {
             Thread.sleep(maxDuration*1000);
-            jabeImpl.updateItemList(itemID,seller);
+            try {
+                jabeImpl.updateItemList(itemID,seller);
+            } catch (RemoteException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
             cancel();
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block

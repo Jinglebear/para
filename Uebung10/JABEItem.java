@@ -1,6 +1,4 @@
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 
 public class JABEItem implements Serializable{
     private static int idCounter = 0; // static counter
@@ -40,7 +38,7 @@ public class JABEItem implements Serializable{
      * getter for price of the item
      * @return
      */
-    public int getPrice() {
+    public synchronized int getPrice() {
         return price;
     }
     /**
@@ -48,7 +46,7 @@ public class JABEItem implements Serializable{
      * e.g. by a bid 
      * @param price
      */
-    public void setPrice(int price) {
+    public synchronized void setPrice(int price) {
         this.price = price;
     }
 }

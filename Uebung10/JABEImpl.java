@@ -18,6 +18,8 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
         this.loggedInUsers = new ArrayList<>();
         this.offers = new HashMap<>();
         this.currentHighestBidder = new HashMap<>();
+        this.observingClients = new ArrayList<>();
+        this.listOfConcern = new HashMap<>();
     }
 
     /**
@@ -25,7 +27,7 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
      * 
      * @return true (if login was successfull), false (if login was not successfull)
      */
-    public boolean login(String username, String password) throws RemoteException {
+    public void login(String username, String password) throws RemoteException, JABEException {
         boolean success = false;
         for (Map.Entry<String, String> entry : this.loginCredentials.entrySet()) {
             if (entry.getKey().equals(username) && entry.getValue().equals(password)) {
@@ -37,24 +39,28 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
             ArrayList<JABEItem> itemArr = new ArrayList<>();
             offers.put(username, itemArr);
         }
-        return success;
+		else
+			throw new JABEException();
+        //return success;
     }
 
-    public boolean logout(String username) throws RemoteException {
-        boolean success = false;
+    public void logout(String username) throws RemoteException, JABEException {
+        //boolean success = false;
         if (this.loggedInUsers.contains(username)) {
             this.loggedInUsers.remove(username);
-            success = true;
+            //success = true;
         }
+		else
+			throw new JABEException();
 
-        return success;
+        //return success;
     }
 
     /**
      * offer Method make a new Item offer list item in offers map list item in
      * timeList map
      */
-    public boolean offer(String username, String itemName, int minPrice, int maxDuration) throws RemoteException {
+    public void offer(String username, String itemName, int minPrice, int maxDuration) throws RemoteException, JABEException {
         boolean success = false;
         if (loggedInUsers.contains(username)) {
             JABEItem item = new JABEItem(itemName);
@@ -64,16 +70,33 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
             MyTask myTask = new MyTask(maxDuration, this, item.getID(), username);
             Timer timer = new Timer("MyTimer");
             timer.schedule(myTask, 0);
+            if(this.listOfConcern.containsKey(username)){
+                this.listOfConcern.get(username).add(item.getID());
+            }
+            else{
+                ArrayList<String> tmp = new ArrayList<>();
+                tmp.add(item.getID());
+                this.listOfConcern.put(username, tmp);
+            }
         } else {
             System.out.println(username + "tried to offer an item (but was not logged in)");
+			throw new JABEException();
         }
-        return success;
+        //return success;
     }
 
-    public synchronized void updateItemList(String itemID, String seller) {
+    public synchronized void updateItemList(String itemID, String seller)throws RemoteException {
         boolean search = true;
         for (int i = 0; i < this.offers.get(seller).size() && search; ++i) {
             if (this.offers.get(seller).get(i).getID().equals(itemID)) {
+                for(JABEMonitorInterface jabeMonitorInterface : this.observingClients){
+                    for(Map.Entry<String,ArrayList<String>> entry : this.listOfConcern.entrySet()){
+                        if(entry.getValue().contains(itemID)){
+                            jabeMonitorInterface.alertOnEndingAuction(itemID);
+                            entry.getValue().remove(itemID);
+                        }
+                    }
+                }
                 String highestBidder = this.currentHighestBidder.get(itemID);
                 this.currentHighestBidder.remove(itemID);
                 System.out.println("Item offer " + this.offers.get(seller).get(i).getName() + " expired and "
@@ -88,13 +111,25 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
      * list method if username fits to one client in offers map the belonging offer
      * list is returned
      */
-    public synchronized List<JABEItem> listAuctinsOfUser(String username) throws RemoteException {
-        for (Map.Entry<String, ArrayList<JABEItem>> entry : this.offers.entrySet()) {
-            if (entry.getKey().equals(username)) {
-                return entry.getValue();
+    public synchronized List<JABEItem> listAuctinsOfUser(String username,boolean all) throws RemoteException, JABEException {
+        if(all){
+            ArrayList<JABEItem> result = new ArrayList<>();
+            for(Map.Entry<String,ArrayList<JABEItem>> entry: this.offers.entrySet()){
+                for(JABEItem item : entry.getValue()){
+                    result.add(item);
+                }
+            }
+            return result;
+        }
+        else{
+            for (Map.Entry<String, ArrayList<JABEItem>> entry : this.offers.entrySet()) {
+                if (entry.getKey().equals(username)) {
+                    return entry.getValue();
+                }
             }
         }
-        return null;
+		throw new JABEException();
+        //return null;
     }
 
     /**
@@ -104,7 +139,7 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
      * 
      */
     @Override
-    public synchronized boolean bid(String username, String itemID, int bid) throws RemoteException {
+    public synchronized void bid(String username, String itemID, int bid) throws RemoteException, JABEException {
         boolean success = false;
         if (this.loggedInUsers.contains(username)) {
             for (ArrayList<JABEItem> list : this.offers.values()) {
@@ -114,18 +149,38 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
                             itemInList.setPrice(bid);
                             this.currentHighestBidder.put(itemInList.getID(), username);
                             success = true;
+                            if(this.listOfConcern.containsKey(username)){
+                                this.listOfConcern.get(username).add(itemID);
+                            }
+                            else{
+                                ArrayList<String> tmp = new ArrayList<>();
+                                tmp.add(itemID);
+                                this.listOfConcern.put(username, tmp);
+                            }
+                            for(JABEMonitorInterface jabeMonitorInterface : this.observingClients){
+                                for(Map.Entry<String,ArrayList<String>> entry : this.listOfConcern.entrySet()){
+                                    if(entry.getValue().contains(itemID)){
+                                        jabeMonitorInterface.alertOnHigherBid(itemID);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-        return success;
+        if(!success)
+			throw new JABEException();
     }
-
+    Map<String,ArrayList<String>> listOfConcern;
     @Override
-    public void observe(String ItemID, String username) throws RemoteException {
-        // TODO Auto-generated method stub
-
+    public synchronized void observe(JABEMonitorInterface monitorInterface) throws RemoteException {
+        observingClients.add(monitorInterface);
     }
+    @Override
+    public synchronized void removeObserver(JABEMonitorInterface monitorInterface)throws RemoteException{
+        observingClients.remove(monitorInterface);
+    }
+    List<JABEMonitorInterface> observingClients;
 
 }
