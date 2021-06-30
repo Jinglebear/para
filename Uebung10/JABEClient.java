@@ -1,9 +1,7 @@
-import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -34,25 +32,35 @@ public class JABEClient {
         System.out.println("2: List (all items of a certain user can be listed)");
         System.out.println("3: Bid (bid for an item (identifyed by item ID))");
         System.out.println("4: Observe (Switch the client into observer-mode)");
-        System.out.println("5: print the available Actions again..");
+        System.out.println("5: Quit Observer Mode");
         System.out.println("0: Exit the Client \n");
-        
+
     }
 
     private void listItems(JABEInterface jabeInterface, Scanner scanner) throws RemoteException {
-        System.out.println("Enter username:");
-        String username = scanner.nextLine();
-        List<JABEItem> items = jabeInterface.listAuctinsOfUser(username);
-        if (items != null) {
-            if (!items.isEmpty()) {
-                for (JABEItem item : items) {
-                    System.out.println(item.toString());
+        System.out.println("Enter 0 for all items or 1 for entering specific username: <0> / <1>");
+        String in = scanner.nextLine();
+        int choice = Integer.parseInt(in);
+        if (choice == 1) {
+            System.out.println("Enter username:");
+            String username = scanner.nextLine();
+            List<JABEItem> items = jabeInterface.listAuctinsOfUser(username, false);
+            if (items != null) {
+                if (!items.isEmpty()) {
+                    for (JABEItem item : items) {
+                        System.out.println(item.toString());
+                    }
+                } else {
+                    System.out.println("This user does not have Items listed yet");
                 }
             } else {
-                System.out.println("This user does not have Items listed yet");
+                System.out.println("No items could be found");
             }
-        } else {
-            System.out.println("No items could be found");
+        } else if (choice == 0) {
+            List<JABEItem> items = jabeInterface.listAuctinsOfUser(null, true);
+            for (JABEItem item : items) {
+                System.out.println(item.toString());
+            }
         }
     }
 
@@ -96,7 +104,18 @@ public class JABEClient {
             System.out.println("Wrong Input..");
         }
     }
+    JABEMonitorImpl monitor;
+    private void observe(JABEInterface jabeInterface, Scanner scanner) throws RemoteException {
+        System.out.println("Entering observer mode");
 
+        monitor = new JABEMonitorImpl();
+        jabeInterface.observe(monitor);
+
+    }
+    private void quitObserve(JABEInterface jabeInterface,Scanner scanner)throws RemoteException{
+        System.out.println("Quitting observer mode");
+        jabeInterface.removeObserver(monitor);
+    }
     private void actionLoop(JABEInterface jabeInterface, Scanner scanner) throws RemoteException {
         boolean action = true;
         printActions();
@@ -117,8 +136,11 @@ public class JABEClient {
                         printActions();
                         break;
                     case 4:
+                        observe(jabeInterface, scanner);
+                        printActions();
                         break;
                     case 5:
+                        quitObserve(jabeInterface, scanner);
                         printActions();
                         break;
                     case 0:
