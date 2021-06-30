@@ -80,10 +80,18 @@ public class JABEImpl extends UnicastRemoteObject implements JABEInterface {
         return success;
     }
 
-    public synchronized void updateItemList(String itemID, String seller) {
+    public synchronized void updateItemList(String itemID, String seller)throws RemoteException {
         boolean search = true;
         for (int i = 0; i < this.offers.get(seller).size() && search; ++i) {
             if (this.offers.get(seller).get(i).getID().equals(itemID)) {
+                for(JABEMonitorInterface jabeMonitorInterface : this.observingClients){
+                    for(Map.Entry<String,ArrayList<String>> entry : this.listOfConcern.entrySet()){
+                        if(entry.getValue().contains(itemID)){
+                            jabeMonitorInterface.alertOnEndingAuction(itemID);
+                            entry.getValue().remove(itemID);
+                        }
+                    }
+                }
                 String highestBidder = this.currentHighestBidder.get(itemID);
                 this.currentHighestBidder.remove(itemID);
                 System.out.println("Item offer " + this.offers.get(seller).get(i).getName() + " expired and "
