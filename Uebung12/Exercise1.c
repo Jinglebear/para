@@ -3,7 +3,8 @@
 #include <stdlib.h>
 int main(int argc, char *argv[])
 {
-    int nProcesses, myRank, stag = 1, numIterations = 1000, work =1,iteration =0, arraySize = 100;
+    // edit : numIterations, arraySize !
+    int nProcesses, myRank, stag = 1, numIterations = 1000, work =1,iteration =0, arraySize = 100000;
     MPI_Comm comm;
     // use world comm
     comm = MPI_COMM_WORLD; 
@@ -52,8 +53,8 @@ int main(int argc, char *argv[])
                     }
                 };
                 tTotalElapsed = MPI_Wtime() - tTotalStart;
-                double byteSize = arraySize * sizeof(int);
-                printf("Size (bytes): %lf\n",byteSize);
+                int byteSize = arraySize * sizeof(int);
+                printf("Size (bytes): %d\n",byteSize);
                 printf("Num of Iterations : %d\n",numIterations);
                 printf("Total Time elapsed (in Seconds): %lf\n",tTotalElapsed);
                 double maxMessageTime =0;
