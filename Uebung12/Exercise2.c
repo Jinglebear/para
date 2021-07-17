@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 //op_type: 0:add, 1: multiply, 2: maximum, 3: minimum
-int My_Reduce(void* sendbuf, void* recvbuf, int count, int op_type, int root, MPI_Comm comm)
+int reduce(void* sendbuf, void* recvbuf, int count, int op_type, int root, MPI_Comm comm)
 {
     int n;
     MPI_Comm_size(MPI_COMM_WORLD, &n);
@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
     for(int i = 0; i < 3; ++i)
         res[i] = 0;
 
-    My_Reduce(val, res, 3, 0, 0, MPI_COMM_WORLD);
+    reduce(val, res, 3, 0, 0, MPI_COMM_WORLD);
     if(myRank == 0) {
         printf("Addition of values:\n");
         for(int i = 0; i < 3; ++i) {
@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
         printf("\n");
     }
 
-    My_Reduce(val, res, 3, 1, 0, MPI_COMM_WORLD);
+    reduce(val, res, 3, 1, 0, MPI_COMM_WORLD);
     if(myRank == 0) {
         printf("Multiplication of values:\n");
         for(int i = 0; i < 3; ++i) {
@@ -121,7 +121,7 @@ int main(int argc, char** argv) {
         printf("\n");
     }
 
-    My_Reduce(val, res, 3, 2, 0, MPI_COMM_WORLD);
+    reduce(val, res, 3, 2, 0, MPI_COMM_WORLD);
     if(myRank == 0) {
         printf("Maximum of values:\n");
         for(int i = 0; i < 3; ++i) {
@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
         printf("\n");
     }
 
-    My_Reduce(val, res, 3, 3, 0, MPI_COMM_WORLD);
+    reduce(val, res, 3, 3, 0, MPI_COMM_WORLD);
     if(myRank == 0) {
         printf("Minimum of values:\n");
         for(int i = 0; i < 3; ++i) {
@@ -145,10 +145,10 @@ int main(int argc, char** argv) {
     double st = MPI_Wtime();
     double time;
 
-    My_Reduce(val, res, 3, 0, 0, MPI_COMM_WORLD);
-    My_Reduce(val, res, 3, 1, 0, MPI_COMM_WORLD);
-    My_Reduce(val, res, 3, 2, 0, MPI_COMM_WORLD);
-    My_Reduce(val, res, 3, 3, 0, MPI_COMM_WORLD);
+    reduce(val, res, 3, 0, 0, MPI_COMM_WORLD);
+    reduce(val, res, 3, 1, 0, MPI_COMM_WORLD);
+    reduce(val, res, 3, 2, 0, MPI_COMM_WORLD);
+    reduce(val, res, 3, 3, 0, MPI_COMM_WORLD);
 
     double ut = MPI_Wtime()-st;
     MPI_Reduce(&ut, &time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
