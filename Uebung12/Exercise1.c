@@ -1,93 +1,117 @@
 #include <stdio.h>
 #include <mpi.h>
 #include <stdlib.h>
+
+
+//Function for Synchronized Send:
+void Test(int type, int size, int iterations, int myRank) {
+    int work = 1, stag = 1, iteration = 0;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    // programm only operates if there are at least 2 processes
+	MPI_Barrier(comm);
+    if (myRank == 1 || myRank == 0){
+        if (myRank == 0){
+            // note Message start time
+            double tTotalElapsed = 0;
+            double tTotalStart = MPI_Wtime();
+            MPI_Status status;
+            int dest = 1, source = 1, count=0;
+            int *message;
+            message = (int *)malloc(size * sizeof(int));
+            double messageTime[iterations];
+            // note Total time in Seconds
+            // start iteration of ping pong
+            while (work){
+
+                double tMessageStart = MPI_Wtime();
+                // work...
+                MPI_Ssend(message, size, MPI_INT, dest, stag, comm);
+                //printf("%d : Successfully send!\n", myRank);
+                MPI_Recv(message, size, MPI_INT, source, stag, comm, &status);
+                //printf("%d : Successfully recieved!\n", myRank);
+                // note end time
+                double tMessageElapsed = MPI_Wtime() - tMessageStart;
+                messageTime[count] = tMessageElapsed;
+                count++;
+                // count up iterations
+                /*
+                One iteration is defined by sending a message, waiting for the accept and waiting for recieving the
+                returning message
+                send -- wait(accept) -- recieve -- wait (recieve)
+                 */
+                iteration += 1;
+                if (iteration == iterations){
+                    work = 0;
+                    // get the Total time elapsed in Seconds after all Iterations
+                }
+            };
+            tTotalElapsed = MPI_Wtime() - tTotalStart;
+            double byteSize = size * sizeof(int);
+            printf("Size (bytes): %lf\n",byteSize);
+            printf("Num of Iterations : %d\n",iterations);
+            printf("Total Time elapsed (in Seconds): %lf\n",tTotalElapsed);
+            double avgMessageTime =0;
+            for(int i = 0; i < iterations; i++){
+                avgMessageTime += messageTime[i];
+            }
+            avgMessageTime = avgMessageTime / iterations;
+            printf("Average Message Time (in Seconds): %lf\n", avgMessageTime);
+            printf("\n\n");
+        }
+        else if (myRank == 1){
+            MPI_Status status;
+            int source = 0, dest = 0;
+            int *message;
+            message = (int *)malloc(size * sizeof(int));
+            while(work) {
+                MPI_Recv(message, size, MPI_INT, source, stag, comm, &status);
+                //printf("%d : Successfully recieved!\n", myRank);
+                MPI_Ssend(message, size, MPI_INT, dest, stag, comm);
+                //printf("%d : Successfully send!\n", myRank);
+                iteration += 1;
+                if (iteration == iterations){
+                    work = 0;
+                }
+            }
+        }
+
+    }
+
+
+}
+
 int main(int argc, char *argv[])
 {
-    int nProcesses, myRank, stag = 1, numIterations = 1000, work =1,iteration =0, arraySize = 100;
+    MPI_Init(&argc, &argv);
+
+    //Set up environment:
+    int nProcesses, myRank, iterations = 1000;
     MPI_Comm comm;
     // use world comm
-    comm = MPI_COMM_WORLD; 
-    // init
-    MPI_Init(&argc, &argv);  
+    comm = MPI_COMM_WORLD;
     // init comm size
     MPI_Comm_size(comm, &nProcesses);
     // init comm rank
     MPI_Comm_rank(comm, &myRank);
     // programm only operates if there are at least 2 processes
-    if (nProcesses >= 2){
-        if (myRank == 1 || myRank == 0){
-            if (myRank == 0){
-                // note Message start time
-                double tTotalElapsed = 0;
-                double tTotalStart = MPI_Wtime();
-                MPI_Status status;
-                int size = arraySize, dest = 1, source = 1, count=0;
-                int *message;
-                message = (int *)malloc(arraySize * sizeof(int));
-                double messageTime[numIterations];
-                // note Total time in Seconds
-                // start iteration of ping pong
-                while (work){
-                    
-                    double tMessageStart = MPI_Wtime();
-                    // work...
-                    MPI_Ssend(message, size, MPI_INT, dest, stag, comm);
-                    //printf("%d : Successfully send!\n", myRank);
-                    MPI_Recv(message, size, MPI_INT, source, stag, comm, &status);
-                    //printf("%d : Successfully recieved!\n", myRank);
-                    // note end time
-                    double tMessageElapsed = MPI_Wtime() - tMessageStart;
-                    messageTime[count] = tMessageElapsed;
-                    count++;
-                    // count up iterations
-                    /*
-                    One iteration is defined by sending a message, waiting for the accept and waiting for recieving the 
-                    returning message 
-                    send -- wait(accept) -- recieve -- wait (recieve) 
-                     */
-                    iteration += 1;
-                    if (iteration == numIterations){
-                        work = 0;
-                        // get the Total time elapsed in Seconds after all Iterations
-                    }
-                };
-                tTotalElapsed = MPI_Wtime() - tTotalStart;
-                double byteSize = arraySize * sizeof(int);
-                printf("Size (bytes): %lf\n",byteSize);
-                printf("Num of Iterations : %d\n",numIterations);
-                printf("Total Time elapsed (in Seconds): %lf\n",tTotalElapsed);
-                double maxMessageTime =0;
-                for(int i=0;i<numIterations;i++){
-                    if(messageTime[i] > maxMessageTime){
-                        maxMessageTime = messageTime[i];
-                    }
-                }
-                printf("Max Message Time (in Seconds): %lf\n",maxMessageTime);
-            }
-            else if (myRank == 1){
-                MPI_Status status;
-                int size = arraySize, source = 0, dest = 0;
-                int *message;
-                message = (int *)malloc(arraySize * sizeof(int));
-                while(work) {
-                    MPI_Recv(message, size, MPI_INT, source, stag, comm, &status);
-                    //printf("%d : Successfully recieved!\n", myRank);
-                    MPI_Ssend(message, size, MPI_INT, dest, stag, comm);
-                    //printf("%d : Successfully send!\n", myRank);
-                    iteration += 1;
-                    if (iteration == numIterations){
-                        work = 0;
-                    }
-                }
-            }
-            
-        }
+
+    if(nProcesses >= 2)
+    {
+
+        int type = 0;   //0: send, 1: synchronized send, 2: buffered send
+        int sizes[] = {1, 5, 10, 100, 1000, 2000, 5000, 10000, 12000, 50000, 100000, 200000, 300000, 500000, 800000};
+        int length = sizeof(sizes)/sizeof(int);
+        int i;
+        for(i = 0; i < length; ++i)
+            Test(type, sizes[i], iterations, myRank);
+
     }
-    else{
-        printf("2 or more Processes required!\n");
+    else
+    {
+        printf("Not enough Processes\n");
     }
 
-    
+
     MPI_Finalize();
     return 0;
 }
