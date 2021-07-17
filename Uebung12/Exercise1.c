@@ -15,12 +15,13 @@ int main(int argc, char *argv[])
     // programm only operates if there are at least 2 processes
     if (nProcesses >= 2){
         if (myRank == 1 || myRank == 0){
-            // note Message start time
-            double tTotalElapsed = 0;
-            double tTotalStart = MPI_Wtime();
             if (myRank == 0){
+                // note Message start time
+                double tTotalElapsed = 0;
+                double tTotalStart = MPI_Wtime();
                 MPI_Status status;
-                int message[100], size = 100, dest = 1, source = 1;
+                int message[100], size = 100, dest = 1, source = 1, count=0;
+                double messageTime[100];
                 // note Total time in Seconds
                 // start iteration of ping pong
                 while (work){
@@ -28,13 +29,13 @@ int main(int argc, char *argv[])
                     double tMessageStart = MPI_Wtime();
                     // work...
                     MPI_Ssend(&message, size, MPI_INT, dest, stag, comm);
-                    printf("%d : Successfully send!\n", myRank);
+                    //printf("%d : Successfully send!\n", myRank);
                     MPI_Recv(&message, size, MPI_INT, source, stag, comm, &status);
-                    printf("%d : Successfully recieved!\n", myRank);
+                    //printf("%d : Successfully recieved!\n", myRank);
                     // note end time
                     double tMessageElapsed = MPI_Wtime() - tMessageStart;
-                    
-
+                    messageTime[count] = tMessageElapsed;
+                    count++;
                     // count up iterations
                     /*
                     One iteration is defined by sending a message, waiting for the accept and waiting for recieving the 
@@ -46,25 +47,28 @@ int main(int argc, char *argv[])
                         work = 0;
                         // get the Total time elapsed in Seconds after all Iterations
                     }
+                };
+                tTotalElapsed = MPI_Wtime() - tTotalStart;
+                printf("Total Time elapsed : %lf\n\n\n",tTotalElapsed);
+                for(int i=0;i<100;i++){
+                    printf("  %lf\n",messageTime[i]);
                 }
-                
             }
             else if (myRank == 1){
                 MPI_Status status;
                 int message[100], size = 100, source = 0, dest = 0;
                 while(work) {
                     MPI_Recv(&message, size, MPI_INT, source, stag, comm, &status);
-                    printf("%d : Successfully recieved!\n", myRank);
+                    //printf("%d : Successfully recieved!\n", myRank);
                     MPI_Ssend(&message, size, MPI_INT, dest, stag, comm);
-                    printf("%d : Successfully send!\n", myRank);
+                    //printf("%d : Successfully send!\n", myRank);
                     iteration += 1;
                     if (iteration == numIterations){
                         work = 0;
                     }
                 }
             }
-            tTotalElapsed = MPI_Wtime() - tTotalStart;
-            printf("Total Time elapsed : %lf\n",tTotalElapsed);
+            
         }
     }
     else{
