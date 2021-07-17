@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <mpi.h>
+#include <stdlib.h>
 int main(int argc, char *argv[])
 {
-    int nProcesses, myRank, stag = 1, numIterations = 100, work =1,iteration =0;
+    int nProcesses, myRank, stag = 1, numIterations = 1000, work =1,iteration =0, arraySize = 100;
     MPI_Comm comm;
     // use world comm
     comm = MPI_COMM_WORLD; 
@@ -20,17 +21,19 @@ int main(int argc, char *argv[])
                 double tTotalElapsed = 0;
                 double tTotalStart = MPI_Wtime();
                 MPI_Status status;
-                int message[100], size = 100, dest = 1, source = 1, count=0;
-                double messageTime[100];
+                int size = arraySize, dest = 1, source = 1, count=0;
+                int *message;
+                message = (int *)malloc(arraySize * sizeof(int));
+                double messageTime[numIterations];
                 // note Total time in Seconds
                 // start iteration of ping pong
                 while (work){
                     
                     double tMessageStart = MPI_Wtime();
                     // work...
-                    MPI_Ssend(&message, size, MPI_INT, dest, stag, comm);
+                    MPI_Ssend(message, size, MPI_INT, dest, stag, comm);
                     //printf("%d : Successfully send!\n", myRank);
-                    MPI_Recv(&message, size, MPI_INT, source, stag, comm, &status);
+                    MPI_Recv(message, size, MPI_INT, source, stag, comm, &status);
                     //printf("%d : Successfully recieved!\n", myRank);
                     // note end time
                     double tMessageElapsed = MPI_Wtime() - tMessageStart;
@@ -49,18 +52,27 @@ int main(int argc, char *argv[])
                     }
                 };
                 tTotalElapsed = MPI_Wtime() - tTotalStart;
-                printf("Total Time elapsed : %lf\n\n\n",tTotalElapsed);
-                for(int i=0;i<100;i++){
-                    printf("  %lf\n",messageTime[i]);
+                double byteSize = arraySize * sizeof(int);
+                printf("Size (bytes): %lf\n",byteSize);
+                printf("Num of Iterations : %d\n",numIterations);
+                printf("Total Time elapsed (in Seconds): %lf\n",tTotalElapsed);
+                double maxMessageTime =0;
+                for(int i=0;i<numIterations;i++){
+                    if(messageTime[i] > maxMessageTime){
+                        maxMessageTime = messageTime[i];
+                    }
                 }
+                printf("Max Message Time (in Seconds): %lf\n",maxMessageTime);
             }
             else if (myRank == 1){
                 MPI_Status status;
-                int message[100], size = 100, source = 0, dest = 0;
+                int size = arraySize, source = 0, dest = 0;
+                int *message;
+                message = (int *)malloc(arraySize * sizeof(int));
                 while(work) {
-                    MPI_Recv(&message, size, MPI_INT, source, stag, comm, &status);
+                    MPI_Recv(message, size, MPI_INT, source, stag, comm, &status);
                     //printf("%d : Successfully recieved!\n", myRank);
-                    MPI_Ssend(&message, size, MPI_INT, dest, stag, comm);
+                    MPI_Ssend(message, size, MPI_INT, dest, stag, comm);
                     //printf("%d : Successfully send!\n", myRank);
                     iteration += 1;
                     if (iteration == numIterations){
