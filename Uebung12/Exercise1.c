@@ -25,7 +25,14 @@ void Test(int type, int size, int iterations, int myRank) {
 
                 double tMessageStart = MPI_Wtime();
                 // work...
-                MPI_Ssend(message, size, MPI_INT, dest, stag, comm);
+                if(type == 0)
+                    MPI_Send(message, size, MPI_INT, dest, stag, comm);
+                else if(type == 1)
+                    MPI_Ssend(message, size, MPI_INT, dest, stag, comm);
+                else if(type == 2) {
+                    MPI_Buffer_attach(&message, size);
+                    MPI_Bsend(message, size, MPI_INT, dest, stag, comm);
+                }
                 //printf("%d : Successfully send!\n", myRank);
                 MPI_Recv(message, size, MPI_INT, source, stag, comm, &status);
                 //printf("%d : Successfully recieved!\n", myRank);
@@ -66,7 +73,14 @@ void Test(int type, int size, int iterations, int myRank) {
             while(work) {
                 MPI_Recv(message, size, MPI_INT, source, stag, comm, &status);
                 //printf("%d : Successfully recieved!\n", myRank);
-                MPI_Ssend(message, size, MPI_INT, dest, stag, comm);
+                if(type == 0)
+                    MPI_Send(message, size, MPI_INT, dest, stag, comm);
+                else if(type == 1)
+                    MPI_Ssend(message, size, MPI_INT, dest, stag, comm);
+                else if(type == 2) {
+                    MPI_Buffer_attach(&message, size);
+                    MPI_Bsend(message, size, MPI_INT, dest, stag, comm);
+                }
                 //printf("%d : Successfully send!\n", myRank);
                 iteration += 1;
                 if (iteration == iterations){
@@ -93,8 +107,8 @@ int main(int argc, char *argv[])
     MPI_Comm_size(comm, &nProcesses);
     // init comm rank
     MPI_Comm_rank(comm, &myRank);
-    // programm only operates if there are at least 2 processes
 
+    // programm only operates if there are at least 2 processes
     if(nProcesses >= 2)
     {
 
