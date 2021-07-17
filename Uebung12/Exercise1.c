@@ -4,7 +4,7 @@
 int main(int argc, char *argv[])
 {
     // edit : numIterations, arraySize !
-    int nProcesses, myRank, stag = 1, numIterations = 1000, work =1,iteration =0, arraySize = 100000;
+    int nProcesses, myRank, stag = 1, numIterations = 1000, work =1,iteration =0, arraySize = 400000;
     MPI_Comm comm;
     // use world comm
     comm = MPI_COMM_WORLD; 
@@ -59,11 +59,9 @@ int main(int argc, char *argv[])
                 printf("Total Time elapsed (in Seconds): %lf\n",tTotalElapsed);
                 double maxMessageTime =0;
                 for(int i=0;i<numIterations;i++){
-                    if(messageTime[i] > maxMessageTime){
-                        maxMessageTime = messageTime[i];
-                    }
+                    maxMessageTime +=messageTime[i];
                 }
-                printf("Max Message Time (in Seconds): %lf\n",maxMessageTime);
+                printf("Average Message Time (in Seconds): %lf\n",maxMessageTime/numIterations);
             }
             else if (myRank == 1){
                 MPI_Status status;
