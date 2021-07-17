@@ -19,26 +19,31 @@ int main(int argc, char *argv[])
                 if(myRank == 0){
                     //root process
                     MPI_Status status;
-                    int message[10], size = 10, dest = 1, source =1;
+                    int message[100], size = 100, dest = 1, source =1;
+                    for(int i=0;i<size;++i){
+                        message[i] = (i * 512)+1;
+                    }
                     MPI_Ssend(&message,size,MPI_INT,dest,stag,comm);
                     printf("%d : Successfully send!\n",myRank);
-                    fflush(stdout);
                     MPI_Recv(&message,size,MPI_INT,source,stag,comm,&status);
                     printf("%d : Successfully recieved!\n",myRank);
-                    fflush(stdout);
         
                 }
                 else if(myRank == 1){
                     MPI_Status status;
-                    int message[10], size = 10, source = 0, dest =0;
+                    int message[100], size = 100, source = 0, dest =0;
                     MPI_Recv(&message,size,MPI_INT,source,stag,comm,&status);
+                    /* for(int j=0;j<size;++j){
+                        printf("%d,",message[j]);
+                    } */
                     printf("%d : Successfully recieved!\n",myRank);
-                    fflush(stdout);
+                    for(int i=0;i<size;++i){
+                        message[i] = (i * 512)+1;
+                    }
                     MPI_Ssend(&message,size,MPI_INT,dest,stag,comm);
                     printf("%d : Successfully send!\n",myRank);
-                    fflush(stdout);
                 }
-                if(MPI_Wtime() > stime + 10){
+                if(MPI_Wtime() > stime + 0){
                     work =0;
                     MPI_Finalize();
                     return 0;
